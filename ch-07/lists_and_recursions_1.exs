@@ -1,4 +1,5 @@
 defmodule MyList do
+  
   def mapsum(collection, func),
     do: map(collection, func) |> reduce(0, &(&1 + &2))
   
