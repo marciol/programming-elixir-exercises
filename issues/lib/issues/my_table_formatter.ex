@@ -12,15 +12,16 @@ defmodule Issues.MyTableFormatter do
   end
 
   def build_header(keys, column_sizes) do
-    [_build_row(keys, column_sizes), _build_line(column_sizes)]
+    [_build_row(keys, column_sizes), _build_hr(column_sizes)]
   end
 
   def build_rows(list, column_sizes) do
-    Enum.flat_map list, fn row ->  
-      row_content = 
-        _extract_values(row)
+    Enum.flat_map list, fn r ->  
+      row = 
+        keys
+        |> _extract_values(r)
         |> _build_row(column_sizes)
-      [row_content, _build_line(column_sizes)]
+      [row, _build_hr(column_sizes)]
     end
   end
 
@@ -29,7 +30,7 @@ defmodule Issues.MyTableFormatter do
     "| " <> Enum.join(row_content, " | ") <> " |"
   end
 
-  def _build_line(column_sizes) do
+  def _build_hr(column_sizes) do
     line_content =
       Enum.map column_size, 
         fn size -> 
