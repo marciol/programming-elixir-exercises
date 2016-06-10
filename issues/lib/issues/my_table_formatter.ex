@@ -1,6 +1,37 @@
 defmodule Issues.MyTableFormatter do
   def format(list, keys, opts \\ [pad_size: 1])
 
+  @doc """
+  Takes a list of rows as Maps and a list of strings, which references keys existents on Maps passed in the first list
+  Returns a formatted table where the keys are setted as header columns followed by each row.
+
+  ## Example
+
+      iex> list = [
+      ...>    %{
+      ...>     "id" => "3",
+      ...>      "created_at" => "2015-01-01T01:01:01Z",
+      ...>      "title" => "foo bar baz",
+      ...>      "other_data" => "other data"
+      ...>    },
+      ...>    %{
+      ...>      "id" => "823",
+      ...>      "created_at" => "2016-01-01T01:01:01Z",
+      ...>      "title" => "foo bar baz quux",
+      ...>      "other_data" => "other data"
+      ...>    }
+      ...>  ]
+      iex> Issues.MyTableFormatter.format(list, ["id", "created_at", "title"])
+      \"""
+      | #   | created_at           | title            |
+      +-----+----------------------+------------------+
+      | 3   | 2015-01-01T01:01:01Z | foo bar baz      |
+      +-----+----------------------+------------------+
+      | 823 | 2016-01-01T01:01:01Z | foo bar baz quux |
+      +-----+----------------------+------------------+
+      \"""
+  """
+
   def format(list, keys, pad_size: pad_size) do
     column_sizes = _column_sizes_for(list, keys)
     column_headers = List.replace_at keys, Enum.find_index(keys, &(&1 == "id")), "#"

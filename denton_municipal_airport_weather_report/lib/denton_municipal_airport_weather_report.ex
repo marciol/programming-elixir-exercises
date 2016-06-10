@@ -1,0 +1,2 @@
+defmodule DentonMunicipalAirportWeatherReport do
+end
