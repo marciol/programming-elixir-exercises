@@ -28,7 +28,7 @@ defmodule Issues.MyTableFormatter do
   end
 
   def _build_row(row, column_sizes, pad_size) do
-    row_content = row |> Enum.zip(column_sizes) |> Enum.map(fn {str, size} -> String.ljust(str, size) end)
+    row_content = row |> Enum.map(&to_string/1) |> Enum.zip(column_sizes) |> Enum.map(fn {str, size} -> String.ljust(str, size) end)
     "|" <> String.duplicate(" ", pad_size) <> Enum.join(row_content, " | ") <> String.duplicate(" ", pad_size) <> "|"
   end
 
@@ -63,6 +63,9 @@ defmodule Issues.MyTableFormatter do
   end
 
   defp _max_column_size(list1, list2, acc \\ [])
+
+  defp _max_column_size([ h1 | t1 ], list2, acc)
+    when not is_binary(h1), do: _max_column_size([ to_string(h1) | t1 ], list2, acc)
 
   defp _max_column_size([ h1 | t1 ], [ h2 | t2 ], acc)
     when byte_size(h1) > h2, do: _max_column_size(t1, t2, [ byte_size(h1) | acc ])
