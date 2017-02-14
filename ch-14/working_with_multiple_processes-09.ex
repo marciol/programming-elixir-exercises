@@ -1,10 +1,10 @@
 defmodule WordCounter do
   # extract one word from args on pattern matching
   def count(scheduler) do
-    send scheduler, { :ready, self }
+    send scheduler, { :ready, self() }
     receive do
       { :count, file_path, [word], client } ->
-        send client, { :answer, file_path, count_in_file(file_path, word), self }
+        send client, { :answer, file_path, count_in_file(file_path, word), self() }
         count(scheduler)
       { :shutdown } ->
         exit(:normal)
@@ -22,7 +22,7 @@ defmodule Scheduler do
   # remove args from spawn, args should be passed by schedule
   def run(num_processes, module, func, args, to_calculate) do
     (1..num_processes)
-    |> Enum.map(fn(_) -> spawn(module, func, [self]) end)
+    |> Enum.map(fn(_) -> spawn(module, func, [self()]) end)
     |> schedule_processes(func, args, to_calculate, [])
   end
 
@@ -30,19 +30,19 @@ defmodule Scheduler do
     receive do 
       {:ready, pid} when length(queue) > 0 ->
         [ next | tail ] = queue
-        send pid, {func, next, args, self}
+        send pid, {func, next, args, self()}
         schedule_processes(processes, func, tail, results)
 
       {:ready, pid} ->
         send pid, {:shutdown}
         if length(processes) > 1 do
-          schedule_processes(List.delete(processes, pid), func, queue, results)
+          schedule_processes(List.delete(processes, pid), func, args, queue, results)
         else
           results
         end
 
       {:answer, item, result, _pid} ->
-        schedule_processes(processes, func, queue, [ {item, result} | results ])
+        schedule_processes(processes, func, args, queue, [ {item, result} | results ])
     end
   end
 end
@@ -59,8 +59,10 @@ defmodule File.Recursive do
   end
 end
 
-dir = "/Users/marciol/Projects/umanni/umanni_hr/app/"
+dir = "/home/marciol/Projects/umanni_hr/app/"
 
 to_process = File.Recursive.ls!(dir)
 
-results = Scheduler.run(Enum.count(to_process), WordCounter, :count, ["cat"], to_process)
+numnber = 
+  Scheduler.run(Enum.count(to_process), WordCounter, :count, ["cat"], to_process)
+  |> Enum.reduce(0, fun({_, n}, acc) -> acc + n end)
