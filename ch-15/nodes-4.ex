@@ -3,9 +3,10 @@ defmodule TickerNode do
   @name :ticker
 
   def start_master do
-    pid = spawn(__MODULE__, :generator, [[]])
+    pid = spawn(__MODULE__, :generator, [])
     :global.register_name(@name, pid)
-#    :timer.send_interval(@interval, pid, { :tick })
+    TickerNode.register(pid)
+    :timer.send_after(@interval, pid, { :tick, pid })
   end
 
   def start do
@@ -14,41 +15,33 @@ defmodule TickerNode do
   end
 
   def register(node_pid) do
-    send :global.whereis_name(@name), { :register, client_pid }
+    send :global.whereis_name(@name), { :register, node_pid }
   end
 
-  def generator(node) do
+  def generator(current_node_pid \\ nil) do
     receive do
-      { :register, pid } ->
-        IO.puts "registering #{inspect pid}"
-        generator([pid | clients])
-      { :tick } ->
-        IO.puts "tick"
-        tick_client(clients)
-        Enum.reverse(clients) |> generator
+      { :register, node_pid } ->
+        IO.puts "registering #{inspect node_pid}"
+        add_node(current_node_pid, node_pid)
+        generator(node_pid)
+      { :tick, pid } ->
+        IO.puts "tick from #{inspect pid}"
+        tick_node(current_node_pid)
+        generator(current_node_pid)
     end
   end
 
-  defp add_node(previous_node, node) when is_nil(node)
-    when is_nil(previous_node) do
-  end
+  defp add_node(previous_node_pid, node_pid)
+    when previous_node_pid == node_pid,
+    do: nil
 
+  defp add_node(previous_node_pid, node_pid) 
+    when is_nil(previous_node_pid), 
+    do: send node_pid, { :register, self() }
 
-  defp tick_client([]), do: nil
-  defp tick_client([c | _]), do: send c, { :tick }
-end
+  defp add_node(previous_node_pid, node_pid), 
+    do: send node_pid, { :register, previous_node_pid }
 
-defmodule Client do
-  def start do
-    pid = spawn(__MODULE__, :receiver, [])
-    Ticker.register(pid)
-  end
-
-  def receiver do
-    receive do
-      { :tick } -> 
-        IO.puts "tock in client"
-        receiver()
-    end
-  end
+  defp tick_node(node_pid), 
+    do: :timer.send_after(@interval, node_pid, { :tick, self() })
 end
