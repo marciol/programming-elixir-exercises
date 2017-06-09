@@ -1,7 +1,7 @@
 defmodule Stack.MainSupervisor do
   use Supervisor
 
-  def start_link(stack, options \\ []) do
+  def start_link(stack \\ [], options \\ []) do
     {:ok, sup} = result = Supervisor.start_link(__MODULE__, stack, options)
     start_workers(sup, stack)
     result

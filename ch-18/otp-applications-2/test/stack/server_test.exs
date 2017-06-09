@@ -2,25 +2,30 @@ defmodule Stack.ServerTest do
   use ExUnit.Case, async: true
 
   setup do
-    # IEx.puts 'foo bar baz'
-    # Stack.MainSupervisor.start_link()
-    Application.start(:stack)
+    {:ok, pid} = Stack.MainSupervisor.start_link()
+    [pid: pid]
   end
   
   test "push values and them pop in correct order" do
-    assert true
-    # Stack.Server.push :foo
-    # Stack.Server.push :bar
-    # Stack.Server.push :baz
+    Stack.Server.push :foo
+    Stack.Server.push :bar
+    Stack.Server.push :baz
 
-    # assert Stack.Server.pop, :baz
-    # assert Stack.Server.pop, :bar
-    # assert Stack.Server.pop, :foo
+    assert Stack.Server.pop == :baz
+    assert Stack.Server.pop == :bar
+    assert Stack.Server.pop == :foo
   end
 
-  # test "raises error when pop an empty stack" do
-  #   assert_raise RuntimeError, fn ->
-  #     Stack.Server.pop
-  #   end
-  # end
+
+  @tag :capture_log
+  test "restart the process without crash" do
+    catch_exit do
+      Stack.Server.pop
+    end
+    
+    :timer.sleep 1
+    Stack.Server.push :foo
+    
+    assert Stack.Server.pop == :foo
+  end
 end
